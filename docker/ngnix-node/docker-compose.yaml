@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+
+  nginx:
+    restart: always
+    build:
+      context: nginx
+    container_name: nginx
+    networks: 
+      - node-network
+    tty: true
+    ports: 
+      - "8080:80"
+    depends_on: 
+      - app
+
+  app:
+    build: 
+      context: node
+    container_name: app
+    restart: always
+    entrypoint: dockerize -wait tcp://db:3306 -timeout 30s docker-entrypoint.sh node index.js
+    networks: 
+      - node-network
+    tty: true
+    depends_on: 
+       - db
+
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    container_name: db
+    restart: always
+    tty: true
+    environment: 
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+    networks: 
+      - node-network
+
+networks: 
+  node-network:
+    driver: bridge   
